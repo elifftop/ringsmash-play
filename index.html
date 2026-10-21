@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ring Smash">
+  <meta name="theme-color" content="#0a3fae">
+  <link rel="apple-touch-icon" href="icon.png">
+  <title>Ring Smash</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0a1238; overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+    body { font-family: "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif; color: #fff; }
+    /* Phones: the game fills the screen. Desktop: a centered 9:16 phone frame. */
+    #frame { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #unity-canvas { width: 100%; height: 100%; display: block; background: #0c47c2; }
+    @media (min-aspect-ratio: 3/4) {
+      #unity-canvas { height: min(100vh, 900px); width: calc(min(100vh, 900px) * 390 / 844); border-radius: 28px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+    }
+    .layer { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+             background: radial-gradient(70% 55% at 50% 40%, #1f55d6 0%, #0a1f6e 60%, #0a1238 100%); padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom); text-align: center; }
+    .layer img { width: min(78vw, 360px); filter: drop-shadow(0 10px 24px rgba(0,0,0,.45)); }
+    #bar { width: min(70vw, 300px); height: 14px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; }
+    #fill { width: 0; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #ffc928, #ff8a2a); transition: width .2s; }
+    #note { font-size: 14px; opacity: .8; }
+    #play { display: none; font: 400 30px/1 inherit; font-weight: 900; letter-spacing: .04em; color: #fff; background: linear-gradient(180deg, #4be37a, #1fae4f);
+            border: 0; border-radius: 22px; padding: 18px 54px; box-shadow: 0 6px 0 #127a36, 0 14px 30px rgba(0,0,0,.4); }
+    #tip { display: none; font-size: 13px; opacity: .75; max-width: 300px; line-height: 1.4; }
+    #error { display: none; max-width: 320px; font-size: 15px; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div id="frame"><canvas id="unity-canvas" tabindex="-1"></canvas></div>
+  <div class="layer" id="loading">
+    <img src="logo.png" alt="Ring Smash">
+    <div id="bar"><div id="fill"></div></div>
+    <div id="note">Loading…</div>
+    <button id="play" type="button">TAP TO PLAY</button>
+    <div id="tip">Tip: Share → Add to Home Screen plays it full screen like an app.</div>
+    <div id="error"></div>
+  </div>
+  <script src="Build/WebGL.loader.js"></script>
+  <script>
+    var canvas = document.getElementById("unity-canvas");
+    var fill = document.getElementById("fill"), note = document.getElementById("note");
+    var playBtn = document.getElementById("play"), loading = document.getElementById("loading");
+    var standalone = window.navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+    var config = {
+      dataUrl: "Build/WebGL.data.unityweb",
+      frameworkUrl: "Build/WebGL.framework.js.unityweb",
+      codeUrl: "Build/WebGL.wasm.unityweb",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "Elif",
+      productName: "Ring Smash",
+      productVersion: "0.1.0",
+      // 3x Retina screens render at 2x: sharp enough, and much lighter on the phone.
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      matchWebGLToCanvasSize: true
+    };
+    document.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+    createUnityInstance(canvas, config, function (p) { fill.style.width = Math.round(p * 100) + "%"; })
+      .then(function () {
+        note.textContent = "Ready!";
+        document.getElementById("bar").style.display = "none";
+        playBtn.style.display = "block";
+        if (!standalone) document.getElementById("tip").style.display = "block";
+      })
+      .catch(function (message) {
+        note.style.display = "none";
+        var err = document.getElementById("error");
+        err.style.display = "block";
+        err.textContent = "The game could not start in this browser. Try Safari or Chrome with the latest update. (" + message + ")";
+      });
+    // The first tap unlocks sound on iPhone, then the game takes the whole screen.
+    playBtn.addEventListener("click", function () {
+      loading.style.display = "none";
+      canvas.focus();
+    });
+  </script>
+</body>
+</html>
